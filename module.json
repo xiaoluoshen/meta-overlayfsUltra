@@ -1,0 +1,14 @@
+{
+  "id": "meta-overlayfsUltra",
+  "license": "GPL-3.0",
+  "homepage": "https://github.com/xiaoluoshen/meta-overlayfsUltra",
+  "source": "https://github.com/xiaoluoshen/meta-overlayfsUltra",
+  "support": "https://github.com/xiaoluoshen/meta-overlayfsUltra/issues",
+  "donate": "",
+  "cover": "",
+  "screenshots": [],
+  "readme": "https://raw.githubusercontent.com/xiaoluoshen/meta-overlayfsUltra/main/README.md",
+  "categories": ["metamodule", "system"],
+  "require": [],
+  "changelog": "https://raw.githubusercontent.com/xiaoluoshen/meta-overlayfsUltra/main/CHANGELOG.md"
+}

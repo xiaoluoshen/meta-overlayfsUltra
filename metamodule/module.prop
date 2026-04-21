@@ -1,0 +1,7 @@
+id=meta-overlayfsUltra
+name=OverlayFS Ultra MetaModule
+version=v1.0.0
+versionCode=1
+author=xiaoluoshen
+description=Ultra-stealth KernelSU MetaModule. Provides advanced systemless overlay mounting with anti-detection hardening, mount-namespace isolation, and SELinux context mirroring.
+metamodule=1
