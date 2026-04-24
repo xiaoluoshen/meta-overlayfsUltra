@@ -1,0 +1,78 @@
+name: 构建与发布
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: 构建 meta-overlayfsUltra
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 安装 Rust 工具链
+        uses: dtolnay/rust-toolchain@nightly
+        with:
+          targets: aarch64-linux-android,x86_64-linux-android
+
+      - name: 安装 Android NDK
+        uses: nttld/setup-ndk@v1
+        id: setup-ndk
+        with:
+          ndk-version: r27c
+          add-to-path: true
+
+      - name: 配置 Cargo Android 交叉编译
+        run: |
+          mkdir -p ~/.cargo
+          NDK_HOME="${{ steps.setup-ndk.outputs.ndk-path }}"
+          TOOLCHAIN="$NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin"
+          cat >> ~/.cargo/config.toml <<EOF
+          [target.aarch64-linux-android]
+          linker = "$TOOLCHAIN/aarch64-linux-android35-clang"
+          ar = "$TOOLCHAIN/llvm-ar"
+
+          [target.x86_64-linux-android]
+          linker = "$TOOLCHAIN/x86_64-linux-android35-clang"
+          ar = "$TOOLCHAIN/llvm-ar"
+          EOF
+
+      - name: 编译 aarch64
+        run: cargo build --release --target aarch64-linux-android
+
+      - name: 编译 x86_64
+        run: cargo build --release --target x86_64-linux-android
+
+      - name: 打包模块 ZIP
+        run: |
+          VERSION=$(grep '^version' Cargo.toml | head -1 | sed 's/.*= *"\(.*\)"/\1/')
+          STAGING=$(mktemp -d)
+          cp -r metamodule/. "$STAGING/"
+          cp target/aarch64-linux-android/release/meta-overlayfsUltra \
+             "$STAGING/meta-overlayfsUltra-aarch64"
+          cp target/x86_64-linux-android/release/meta-overlayfsUltra \
+             "$STAGING/meta-overlayfsUltra-x86_64"
+          touch "$STAGING/.gitkeep"
+          (cd "$STAGING" && zip -r9 - .) > "meta-overlayfsUltra-v${VERSION}.zip"
+          echo "ZIP=meta-overlayfsUltra-v${VERSION}.zip" >> $GITHUB_ENV
+
+      - name: 创建 GitHub Release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: ${{ env.ZIP }}
+          body_path: CHANGELOG.md
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 上传构建产物（非 tag 构建）
+        uses: actions/upload-artifact@v4
+        if: "!startsWith(github.ref, 'refs/tags/')"
+        with:
+          name: meta-overlayfsUltra-zip
+          path: "*.zip"
